@@ -16,10 +16,11 @@ export default function ArtistDialog({ artist, open, close, submit }) {
       initialValues={artist || {}}
       validationSchema={artistSchema}
       onSubmit={submit}
+      enableReinitialize
     >
       {(formikProps) => (
         <Dialog open={open} onClose={close}>
-          <DialogTitle>Create new Artist</DialogTitle>
+          <DialogTitle>Edit Artist</DialogTitle>
           <DialogContent>
             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
               <FormikTextField
@@ -58,7 +59,7 @@ export default function ArtistDialog({ artist, open, close, submit }) {
               color="success"
               onClick={() => formikProps.submitForm()}
             >
-              Create
+              Save
             </Button>
           </DialogActions>
         </Dialog>

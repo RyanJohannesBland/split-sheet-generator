@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
+import Fuse from "fuse.js";
 import {
   Box,
   Button,
+  IconButton,
   TextField,
   InputAdornment,
   Paper,
@@ -10,12 +12,18 @@ import {
   CardContent,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
+import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
 import ArtistDialog from "@/components/ArtistDialog";
+import ConfirmationDialog from "@/components/ConfirmationDialog";
 
 export default function Test() {
   const [search, setSearch] = useState("");
   const [artists, setArtists] = useState([]);
+
   const [artistDialogOpen, setArtistDialogOpen] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [selectedArtist, setSelectedArtist] = useState({});
 
   // Load artists on mount.
   useEffect(() => fetchArtists(), []);
@@ -32,28 +40,61 @@ export default function Test() {
       body: JSON.stringify(values),
     })
       .then(() => fetchArtists())
-      .then(() => closeDialog());
+      .then(() => closeArtistDialog());
   }
 
-  function editArtist(body) {}
+  function editArtist(values) {
+    fetch("/api/artists", {
+      method: "PUT",
+      body: JSON.stringify(values),
+    })
+      .then(() => fetchArtists())
+      .then(() => closeArtistDialog());
+  }
 
-  function deleteArtist(email) {}
+  function deleteArtist() {
+    fetch("/api/artists", {
+      method: "DELETE",
+      body: JSON.stringify({ email: selectedArtist.id }),
+    })
+      .then(() => fetchArtists())
+      .then(() => setConfirmDeleteOpen(false));
+  }
 
   function filteredArtists() {
-    return artists;
+    if (!search) return artists;
+    const fuse = new Fuse(artists, {
+      threshold: 0.5,
+      keys: ["artistName", "writerName", "id"],
+    });
+    const items = fuse.search(search);
+    return items.map((item) => item.item);
   }
 
-  function closeDialog() {
+  function openDeleteDialog(artist) {
+    setSelectedArtist(artist);
+    setConfirmDeleteOpen(true);
+  }
+
+  function openEditDialog(artist) {
+    setSelectedArtist(artist);
+    setArtistDialogOpen(true);
+  }
+
+  function closeDeleteDialog() {
+    setSelectedArtist({});
+    setConfirmDeleteOpen(false);
+  }
+
+  function closeArtistDialog() {
+    setSelectedArtist({});
     setArtistDialogOpen(false);
   }
 
   return (
-    <Paper sx={{ padding: 2 }}>
-      <Typography variant="h1">Artists</Typography>
-
+    <Box sx={{ padding: 2 }}>
       <Box
         sx={{
-          marginY: 1,
           display: "flex",
           alignContent: "center",
           width: "100%",
@@ -92,15 +133,43 @@ export default function Test() {
         </Box>
 
         {filteredArtists().map((artist) => (
-          <Card sx={{ marginY: 1 }} key={artist.id}>
+          <Card sx={{ marginTop: 1 }} key={artist.id}>
             <CardContent>
-              <Box sx={{}}>
-                <Typography variant="h4">
-                  {artist.artistName} - {artist.writerName}
-                </Typography>
-                <Typography variant="subtitle1">
-                  {artist.id} | {artist.instagram} | {artist.phone}
-                </Typography>
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                }}
+              >
+                <Box sx={{ display: "flex", flexDirection: "column" }}>
+                  <Typography variant="h4">
+                    {artist.artistName} - {artist.writerName}
+                  </Typography>
+                  <Typography variant="subtitle1">
+                    {artist.id} | {artist.instagram} | {artist.phone}
+                  </Typography>
+                </Box>
+                <Box
+                  sx={{
+                    display: "flex",
+                    flexDirection: "row",
+                    alignContent: "center",
+                  }}
+                >
+                  <IconButton
+                    color="error"
+                    onClick={() => openDeleteDialog(artist)}
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                  <IconButton
+                    color="warning"
+                    onClick={() => openEditDialog(artist)}
+                  >
+                    <EditIcon />
+                  </IconButton>
+                </Box>
               </Box>
             </CardContent>
           </Card>
@@ -109,9 +178,18 @@ export default function Test() {
 
       <ArtistDialog
         open={artistDialogOpen}
-        close={closeDialog}
-        submit={createArtist}
+        artist={selectedArtist}
+        close={closeArtistDialog}
+        submit={selectedArtist.id ? editArtist : createArtist}
       />
-    </Paper>
+
+      <ConfirmationDialog
+        title="Delete Artist?"
+        text={`Are you sure you want to delete artist ${selectedArtist.id}?`}
+        open={confirmDeleteOpen}
+        cancel={closeDeleteDialog}
+        confirm={deleteArtist}
+      />
+    </Box>
   );
 }

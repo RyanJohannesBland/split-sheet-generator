@@ -1,9 +1,8 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import {
   DynamoDBDocumentClient,
-  GetCommand,
   PutCommand,
-  UpdateCommand,
+  DeleteCommand,
   QueryCommand,
 } from "@aws-sdk/lib-dynamodb";
 import artistSchema from "@/schema/artist";
@@ -31,7 +30,7 @@ async function getArtists(req, res) {
   res.status(200).json(artists);
 }
 
-async function createArtist(req, res) {
+async function createOrEditArtist(req, res) {
   const newArtist = JSON.parse(req.body);
   const validatedArtist = await artistSchema.validate(newArtist);
 
@@ -42,7 +41,22 @@ async function createArtist(req, res) {
       ...validatedArtist,
     },
   });
-  const response = await docClient.send(command);
+  await docClient.send(command);
+
+  res.status(200).json({ message: "Success!" });
+}
+
+async function deleteArtist(req, res) {
+  const { email } = JSON.parse(req.body);
+
+  const command = new DeleteCommand({
+    TableName: "split_sheet_generator.V1",
+    Key: {
+      objectType: "artist",
+      id: email,
+    },
+  });
+  await docClient.send(command);
 
   res.status(200).json({ message: "Success!" });
 }
@@ -52,7 +66,15 @@ export default async function handler(req, res) {
     await getArtists(req, res);
   }
 
+  if (req.method === "PUT") {
+    await createOrEditArtist(req, res);
+  }
+
   if (req.method === "POST") {
-    await createArtist(req, res);
+    await createOrEditArtist(req, res);
+  }
+
+  if (req.method === "DELETE") {
+    await deleteArtist(req, res);
   }
 }
