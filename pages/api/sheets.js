@@ -217,10 +217,9 @@ async function createSheet(req, res) {
     })
   );
 
-  const pdfBytes = await pdfDoc.save("./test.pdf");
-  await fs.writeFile("./pdfs/test.pdf", pdfBytes);
-
-  res.status(200).json({ message: "Success!" });
+  const pdfBytes = await pdfDoc.save();
+  const arrayBuffer = Buffer.from(pdfBytes);
+  res.status(200).send(arrayBuffer);
 }
 
 export default async function handler(req, res) {

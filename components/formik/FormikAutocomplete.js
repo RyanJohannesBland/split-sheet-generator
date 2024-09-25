@@ -6,7 +6,6 @@ export default function FormikAutocomplete({
   label,
   ...props
 }) {
-  console.log(formikProps.errors);
   return (
     <Autocomplete
       multiple

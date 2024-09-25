@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { Formik } from "formik";
 import {
-  Autocomplete,
   Box,
   Button,
   Card,
   CardActions,
   CardContent,
   CardHeader,
-  TextField,
   Typography,
 } from "@mui/material";
 import FormikTextField from "@/components/formik/FormikTextField";
@@ -27,14 +25,27 @@ export default function Test() {
   }
 
   function createSheet(values) {
-    console.log(values);
-    fetch("/api/sheets", { method: "POST", body: JSON.stringify(values) });
+    fetch("/api/sheets", { method: "POST", body: JSON.stringify(values) })
+      .then((res) => res.arrayBuffer())
+      .then((buffer) => {
+        const blob = new Blob([buffer], { type: "application/pdf" });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.style.display = "none";
+        a.href = url;
+        a.download = "todo-1.pdf";
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+      });
   }
 
   return (
     <Box sx={{ p: 2 }}>
-      <Button>Previous Sheets</Button>
-      <Button>Show Preview</Button>
+      <Box sx={{ py: 1, display: "flex", gap: 1 }}>
+        <Button variant="contained">Previous Sheets</Button>
+        <Button variant="contained">Show Preview</Button>
+      </Box>
 
       <Formik
         initialValues={{}}
@@ -46,22 +57,30 @@ export default function Test() {
             <CardHeader>
               <Typography>Create New Sheet</Typography>
             </CardHeader>
-            <CardContent>
-              <FormikTextField
-                formikProps={formikProps}
-                formikKey="title"
-                label="Title"
-              />
-              <FormikTextField
-                formikProps={formikProps}
-                formikKey="key"
-                label="Key"
-              />
-              <FormikTextField
-                formikProps={formikProps}
-                formikKey="bpm"
-                label="BPM"
-              />
+            <CardContent
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 2,
+              }}
+            >
+              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                <FormikTextField
+                  formikProps={formikProps}
+                  formikKey="title"
+                  label="Title"
+                />
+                <FormikTextField
+                  formikProps={formikProps}
+                  formikKey="key"
+                  label="Key"
+                />
+                <FormikTextField
+                  formikProps={formikProps}
+                  formikKey="bpm"
+                  label="BPM"
+                />
+              </Box>
 
               <FormikAutocomplete
                 formikProps={formikProps}
@@ -93,7 +112,7 @@ export default function Test() {
                 label="Please enter percentages in order"
               />
             </CardContent>
-            <CardActions>
+            <CardActions sx={{ justifyContent: "end" }}>
               <Button onClick={() => formikProps.submitForm()}>
                 Generate Sheet
               </Button>
