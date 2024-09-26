@@ -117,19 +117,23 @@ export default function Test() {
                 }}
               >
                 <Typography>Contributor Percentages</Typography>
-                {[
-                  ...new Set([
-                    ...formikProps?.values?.writers,
-                    ...formikProps?.values?.producers,
-                  ]),
-                ].map((contributor) => (
-                  <FormikTextField
-                    key={contributor.artistName}
-                    formikProps={formikProps}
-                    formikKey={contributor.artistName}
-                    label={`${contributor.artistName} percentage`}
-                  />
-                ))}
+                {/* Render a textfield for each unique contributor. null protect to prevent
+                intermediate value error. */}
+                {(formikProps?.values?.writers?.length ||
+                  formikProps?.values?.writers?.length) &&
+                  [
+                    ...new Set([
+                      ...formikProps?.values?.writers,
+                      ...formikProps?.values?.producers,
+                    ]),
+                  ].map((contributor) => (
+                    <FormikTextField
+                      key={contributor.artistName}
+                      formikProps={formikProps}
+                      formikKey={contributor.artistName}
+                      label={`${contributor.artistName} percentage`}
+                    />
+                  ))}
               </Card>
             </CardContent>
             <CardActions sx={{ justifyContent: "end" }}>
