@@ -124,8 +124,8 @@ export default function Test() {
             }}
           />
           <Button
-            color="success"
-            variant="contained"
+            color="accent"
+            variant="outlined"
             onClick={() => setArtistDialogOpen(true)}
           >
             + Create Artist
@@ -164,7 +164,7 @@ export default function Test() {
                     <DeleteIcon />
                   </IconButton>
                   <IconButton
-                    color="warning"
+                    color="accent"
                     onClick={() => openEditDialog(artist)}
                   >
                     <EditIcon />

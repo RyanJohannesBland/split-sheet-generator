@@ -33,7 +33,7 @@ export default function Test() {
         const a = document.createElement("a");
         a.style.display = "none";
         a.href = url;
-        a.download = "todo-1.pdf";
+        a.download = `${values.songTitle}.pdf`;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
@@ -44,7 +44,6 @@ export default function Test() {
     <Box sx={{ p: 2 }}>
       <Box sx={{ py: 1, display: "flex", gap: 1 }}>
         <Button variant="contained">Previous Sheets</Button>
-        <Button variant="contained">Show Preview</Button>
       </Box>
 
       <Formik
@@ -54,9 +53,6 @@ export default function Test() {
       >
         {(formikProps) => (
           <Card>
-            <CardHeader>
-              <Typography>Create New Sheet</Typography>
-            </CardHeader>
             <CardContent
               sx={{
                 display: "flex",
@@ -64,11 +60,17 @@ export default function Test() {
                 gap: 2,
               }}
             >
+              <Typography variant="h4">Create New Sheet</Typography>
+              <FormikTextField
+                formikProps={formikProps}
+                formikKey="songTitle"
+                label="Sheet Title"
+              />
               <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
                 <FormikTextField
                   formikProps={formikProps}
                   formikKey="title"
-                  label="Title"
+                  label="Song Title"
                 />
                 <FormikTextField
                   formikProps={formikProps}
@@ -106,14 +108,36 @@ export default function Test() {
                 getOptionLabel={(option) => option.artistName}
               />
 
-              <FormikTextField
-                formikProps={formikProps}
-                formikKey="percentages"
-                label="Please enter percentages in order"
-              />
+              <Card
+                sx={{
+                  p: 3,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 2,
+                }}
+              >
+                <Typography>Contributor Percentages</Typography>
+                {[
+                  ...new Set([
+                    ...formikProps?.values?.writers,
+                    ...formikProps?.values?.producers,
+                  ]),
+                ].map((contributor) => (
+                  <FormikTextField
+                    key={contributor.artistName}
+                    formikProps={formikProps}
+                    formikKey={contributor.artistName}
+                    label={`${contributor.artistName} percentage`}
+                  />
+                ))}
+              </Card>
             </CardContent>
             <CardActions sx={{ justifyContent: "end" }}>
-              <Button onClick={() => formikProps.submitForm()}>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={() => formikProps.submitForm()}
+              >
                 Generate Sheet
               </Button>
             </CardActions>

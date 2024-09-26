@@ -8,6 +8,7 @@ import {
   DialogActions,
 } from "@mui/material";
 import artistSchema from "@/schema/artist";
+import FormikCheckBox from "@/components/formik/FormikCheckbox";
 import FormikTextField from "@/components/formik/FormikTextField";
 
 export default function ArtistDialog({ artist, open, close, submit }) {
@@ -30,11 +31,6 @@ export default function ArtistDialog({ artist, open, close, submit }) {
               />
               <FormikTextField
                 formikProps={formikProps}
-                formikKey="writerName"
-                label="Writer Name"
-              />
-              <FormikTextField
-                formikProps={formikProps}
                 formikKey="id"
                 label="Email"
               />
@@ -47,6 +43,41 @@ export default function ArtistDialog({ artist, open, close, submit }) {
                 formikProps={formikProps}
                 formikKey="phone"
                 label="Phone #"
+              />
+              <FormikTextField
+                formikProps={formikProps}
+                formikKey="writerName"
+                label="Writer Name"
+              />
+              <FormikTextField
+                formikProps={formikProps}
+                formikKey="writerIPI"
+                label="Writer IPI #"
+              />
+              <FormikTextField
+                formikProps={formikProps}
+                formikKey="writerPRO"
+                label="Writer PRO #"
+              />
+              <FormikTextField
+                formikProps={formikProps}
+                formikKey="publisherName"
+                label="Publisher Name"
+              />
+              <FormikTextField
+                formikProps={formikProps}
+                formikKey="publisherIPI"
+                label="Publisher IPI #"
+              />
+              <FormikTextField
+                formikProps={formikProps}
+                formikKey="publisherPRO"
+                label="Publisher PRO #"
+              />
+              <FormikCheckBox
+                formikProps={formikProps}
+                formikKey="oneStop"
+                label="One Stop?"
               />
             </Box>
           </DialogContent>

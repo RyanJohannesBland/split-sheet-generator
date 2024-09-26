@@ -12,14 +12,8 @@ function drawText(page, text, params) {
 }
 
 async function createSheet(req, res) {
-  const {
-    title,
-    key,
-    bpm,
-    producers,
-    writers,
-    percentages: rawPercentages,
-  } = JSON.parse(req.body);
+  const { songTitle, title, key, bpm, producers, writers, ...percentages } =
+    JSON.parse(req.body);
 
   const pdfData = await fs.readFile("./pdfs/base_sheet.pdf");
   const pdfDoc = await PDFDocument.load(pdfData);
@@ -66,10 +60,9 @@ async function createSheet(req, res) {
   );
   const contributors = Object.values(contributorMap);
 
-  const percentages = rawPercentages.split(",");
   const contributorPercentages = contributors.map((contributor, i) => [
     contributor,
-    percentages[i],
+    percentages[contributor.artistName],
   ]);
 
   const getPercentagesList = (key) =>

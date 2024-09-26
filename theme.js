@@ -15,18 +15,19 @@ const theme = createTheme({
   },
   palette: {
     background: {
-      default: "#e4f0e2",
-    },
-    default: {
-      main: colors.grey[500],
-      lightest: colors.grey[100],
-      dark: "rgba(0, 0, 0, 0.87)",
+      default: "#AFDDE5", // Pale Blue
     },
     primary: {
-      main: "#040059",
+      main: "#003135", // Dark Blue
+    },
+    secondary: {
+      main: "#0FA4AF", // Light Blue
+    },
+    accent: {
+      main: "#964734", // Brown
     },
     white: {
-      main: "#fff",
+      main: "#FFFFFF", // White
     },
   },
 });
