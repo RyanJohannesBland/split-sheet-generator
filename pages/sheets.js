@@ -6,17 +6,27 @@ import {
   Card,
   CardActions,
   CardContent,
-  CardHeader,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Typography,
 } from "@mui/material";
 import FormikTextField from "@/components/formik/FormikTextField";
 import FormikAutocomplete from "@/components/formik/FormikAutocomplete";
 import sheetSchema from "@/schema/sheet";
 
-export default function Test() {
+export default function Sheets() {
   // Load artists on mount.
   const [artists, setArtists] = useState([]);
   useEffect(() => fetchArtists(), []);
+
+  // Load previous sheets on mount.
+  const [sheets, setSheets] = useState([]);
+  useEffect(() => fetchSheets(), []);
+
+  const [openPreviousSheetsDialog, setOpenPreviousSheetsDialog] =
+    useState(false);
 
   function fetchArtists() {
     fetch("/api/artists", { method: "GET" })
@@ -24,8 +34,37 @@ export default function Test() {
       .then((json) => setArtists(json));
   }
 
+  function fetchSheets() {
+    fetch("/api/sheets", { method: "GET" })
+      .then((res) => res.json())
+      .then((json) => setSheets(json));
+  }
+
   function createSheet(values) {
-    fetch("/api/sheets", { method: "POST", body: JSON.stringify(values) })
+    fetchAndDownloadPdf(
+      "/api/sheets",
+      {
+        method: "POST",
+        body: JSON.stringify(values),
+      },
+      values.songTitle
+    );
+  }
+
+  function downloadSheet(key) {
+    fetch(`/api/sheets?key=${key}`, { method: "GET" })
+      .then((res) => res.json())
+      .then((json) =>
+        fetchAndDownloadPdf(
+          json.url,
+          { method: "GET" },
+          key.replace(".pdf", "")
+        )
+      );
+  }
+
+  function fetchAndDownloadPdf(url, args, fileName) {
+    fetch(url, args)
       .then((res) => res.arrayBuffer())
       .then((buffer) => {
         const blob = new Blob([buffer], { type: "application/pdf" });
@@ -33,7 +72,7 @@ export default function Test() {
         const a = document.createElement("a");
         a.style.display = "none";
         a.href = url;
-        a.download = `${values.songTitle}.pdf`;
+        a.download = `${fileName}.pdf`;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
@@ -43,7 +82,12 @@ export default function Test() {
   return (
     <Box sx={{ p: 2 }}>
       <Box sx={{ py: 1, display: "flex", gap: 1 }}>
-        <Button variant="contained">Previous Sheets</Button>
+        <Button
+          variant="contained"
+          onClick={() => setOpenPreviousSheetsDialog(true)}
+        >
+          Previous Sheets
+        </Button>
       </Box>
 
       <Formik
@@ -148,6 +192,57 @@ export default function Test() {
           </Card>
         )}
       </Formik>
+
+      <Dialog
+        open={openPreviousSheetsDialog}
+        onClose={() => setOpenPreviousSheetsDialog(false)}
+      >
+        <DialogTitle>Previously Created Sheet PDFs</DialogTitle>
+        <DialogContent>
+          <Box
+            sx={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 2,
+            }}
+          >
+            {sheets.map((sheet) => (
+              <Card sx={{ marginTop: 1, width: "100%" }} key={sheet.key}>
+                <CardContent>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      gap: 1,
+                    }}
+                  >
+                    <Typography>{sheet.name}</Typography>
+                    <Typography>
+                      {new Date(sheet.timeCreated).toLocaleString()}
+                    </Typography>
+                    <Button
+                      variant="contained"
+                      onClick={() => downloadSheet(sheet.key)}
+                    >
+                      Download
+                    </Button>
+                  </Box>
+                </CardContent>
+              </Card>
+            ))}
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={() => setOpenPreviousSheetsDialog(false)}
+          >
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

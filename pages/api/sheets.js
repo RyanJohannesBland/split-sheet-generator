@@ -1,5 +1,20 @@
-import { lineSplit, PDFDocument } from "pdf-lib";
+import { PDFDocument } from "pdf-lib";
 import fs from "fs/promises";
+import {
+  S3Client,
+  ListObjectsV2Command,
+  PutObjectCommand,
+  GetObjectCommand,
+} from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+
+const s3Client = new S3Client({
+  region: process.env.REGION,
+  credentials: {
+    accessKeyId: process.env.ACCESS_KEY,
+    secretAccessKey: process.env.SECRET_ACCESS_KEY,
+  },
+});
 
 function drawText(page, text, params) {
   if (typeof text === "number") {
@@ -179,10 +194,14 @@ async function createSheet(req, res) {
   var agreementText = "";
   for (let index in contributors) {
     const contributorName = contributors[index].writerName;
-    if (agreementText.split("\n").at(-1).length + contributorName.length > 26) {
-      agreementText += "\n";
+    const contributorNameSections = contributorName.split(" ");
+    for (let contributorNameSection of contributorNameSections) {
+      const currentLength = agreementText.split("\n").at(-1).length;
+      if (currentLength + contributorNameSection.length > 36) {
+        agreementText += "\n";
+      }
+      agreementText += " " + contributorNameSection;
     }
-    agreementText += contributorName;
     if (index < contributors.length - 1) {
       agreementText += ", ";
     }
@@ -192,13 +211,13 @@ async function createSheet(req, res) {
   drawText(secondPage, agreementText, {
     x: 338,
     y: 355 + 8 * numRows,
-    size: 8,
+    size: 6,
     lineHeight: 8,
   });
   drawText(secondPage, agreementText, {
     x: 120,
     y: 308 + 8 * numRows,
-    size: 8,
+    size: 6,
     lineHeight: 8,
   });
 
@@ -212,10 +231,51 @@ async function createSheet(req, res) {
 
   const pdfBytes = await pdfDoc.save();
   const arrayBuffer = Buffer.from(pdfBytes);
+
+  const command = new PutObjectCommand({
+    Bucket: process.env.BUCKET_NAME,
+    Key: `${songTitle}_${new Date().toISOString()}.pdf`,
+    Body: pdfBytes,
+  });
+  await s3Client.send(command);
   res.status(200).send(arrayBuffer);
 }
 
+async function listSheets(req, res) {
+  const command = new ListObjectsV2Command({
+    Bucket: process.env.BUCKET_NAME,
+  });
+  const { Contents } = await s3Client.send(command);
+  const pdfFiles = Contents.map((obj) => {
+    const strippedFileName = obj.Key.replace(".pdf", "");
+    const [name, timeCreated] = strippedFileName.split("_");
+    return {
+      key: obj.Key,
+      name,
+      timeCreated,
+    };
+  });
+  res.status(200).json(pdfFiles);
+}
+
+async function downloadSheet(req, res) {
+  const command = new GetObjectCommand({
+    Bucket: process.env.BUCKET_NAME,
+    Key: req.query.key,
+  });
+  const url = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+  res.status(200).json({ url });
+}
+
 export default async function handler(req, res) {
+  console.log(req.query);
+  if (req.method === "GET") {
+    if (req.query?.key) {
+      await downloadSheet(req, res);
+    } else {
+      await listSheets(req, res);
+    }
+  }
   if (req.method === "POST") {
     await createSheet(req, res);
   }
