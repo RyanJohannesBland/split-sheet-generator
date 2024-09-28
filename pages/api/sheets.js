@@ -238,6 +238,7 @@ async function createSheet(req, res) {
     Body: pdfBytes,
   });
   await s3Client.send(command);
+
   res.status(200).send(arrayBuffer);
 }
 
@@ -268,7 +269,6 @@ async function downloadSheet(req, res) {
 }
 
 export default async function handler(req, res) {
-  console.log(req.query);
   if (req.method === "GET") {
     if (req.query?.key) {
       await downloadSheet(req, res);
