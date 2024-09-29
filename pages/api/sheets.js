@@ -1,6 +1,4 @@
 import { PDFDocument } from "pdf-lib";
-import fsPromise from "fs/promises";
-import fs from "fs";
 import {
   S3Client,
   ListObjectsV2Command,
@@ -240,7 +238,7 @@ async function createSheet(req, res) {
 
   const command = new PutObjectCommand({
     Bucket: process.env.BUCKET_NAME,
-    Key: `${songTitle}_${new Date().toISOString()}.pdf`,
+    Key: `sheets/${songTitle}_${new Date().toISOString()}.pdf`,
     Body: pdfBytes,
   });
   await s3Client.send(command);
@@ -251,17 +249,21 @@ async function createSheet(req, res) {
 async function listSheets(req, res) {
   const command = new ListObjectsV2Command({
     Bucket: process.env.BUCKET_NAME,
+    Prefix: "sheets/",
   });
   const { Contents } = await s3Client.send(command);
-  const pdfFiles = Contents.map((obj) => {
-    const strippedFileName = obj.Key.replace(".pdf", "");
-    const [name, timeCreated] = strippedFileName.split("_");
-    return {
-      key: obj.Key,
-      name,
-      timeCreated,
-    };
-  });
+
+  const pdfFiles = Contents.filter((obj) => obj.Key !== "sheets/").map(
+    (obj) => {
+      const strippedFileName = obj.Key.replace(".pdf", "");
+      const [name, timeCreated] = strippedFileName.split("_");
+      return {
+        key: obj.Key,
+        name,
+        timeCreated,
+      };
+    }
+  );
   res.status(200).json(pdfFiles);
 }
 
