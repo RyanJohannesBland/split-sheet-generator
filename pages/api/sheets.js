@@ -1,5 +1,6 @@
 import { PDFDocument } from "pdf-lib";
-import fs from "fs/promises";
+import fsPromise from "fs/promises";
+import fs from "fs";
 import {
   S3Client,
   ListObjectsV2Command,
@@ -30,7 +31,12 @@ async function createSheet(req, res) {
   const { songTitle, title, key, bpm, producers, writers, ...percentages } =
     JSON.parse(req.body);
 
-  const pdfData = await fs.readFile("./pdfs/base_sheet.pdf");
+  const getCommand = new GetObjectCommand({
+    Bucket: process.env.BUCKET_NAME,
+    Key: "template/base_sheet.pdf",
+  });
+  const { Body } = await s3Client.send(getCommand);
+  const pdfData = await Body.transformToByteArray();
   const pdfDoc = await PDFDocument.load(pdfData);
 
   const [firstPage, secondPage, thirdPage] = pdfDoc.getPages();
@@ -276,6 +282,7 @@ export default async function handler(req, res) {
       await listSheets(req, res);
     }
   }
+
   if (req.method === "POST") {
     await createSheet(req, res);
   }
