@@ -238,7 +238,7 @@ async function createSheet(req, res) {
 
   const command = new PutObjectCommand({
     Bucket: process.env.BUCKET_NAME,
-    Key: `sheets/${songTitle}_${new Date().toISOString()}.pdf`,
+    Key: `sheets/${songTitle}.pdf`,
     Body: pdfBytes,
   });
   await s3Client.send(command);
@@ -255,12 +255,14 @@ async function listSheets(req, res) {
 
   const pdfFiles = Contents.filter((obj) => obj.Key !== "sheets/").map(
     (obj) => {
-      const strippedFileName = obj.Key.replace(".pdf", "");
-      const [name, timeCreated] = strippedFileName.split("_");
+      const strippedFileName = obj.Key.replace("sheets/", "").replace(
+        ".pdf",
+        ""
+      );
       return {
         key: obj.Key,
-        name,
-        timeCreated,
+        name: strippedFileName,
+        timeCreated: obj.LastModified,
       };
     }
   );

@@ -47,7 +47,8 @@ export default function Sheets() {
         method: "POST",
         body: JSON.stringify(values),
       },
-      values.songTitle
+      values.songTitle,
+      () => fetchSheets()
     );
   }
 
@@ -63,7 +64,7 @@ export default function Sheets() {
       );
   }
 
-  function fetchAndDownloadPdf(url, args, fileName) {
+  function fetchAndDownloadPdf(url, args, fileName, callback) {
     fetch(url, args)
       .then((res) => res.arrayBuffer())
       .then((buffer) => {
@@ -76,7 +77,8 @@ export default function Sheets() {
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
-      });
+      })
+      .then(callback);
   }
 
   return (
