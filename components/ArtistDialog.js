@@ -57,7 +57,7 @@ export default function ArtistDialog({ artist, open, close, submit }) {
               <FormikTextField
                 formikProps={formikProps}
                 formikKey="writerPRO"
-                label="Writer PRO #"
+                label="Writer PRO"
               />
               <FormikTextField
                 formikProps={formikProps}
