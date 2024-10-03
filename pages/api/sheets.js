@@ -91,12 +91,12 @@ async function createSheet(req, res) {
   drawText(firstPage, getPercentagesList("writerName"), {
     x: 75,
     y: 532,
-    size: 10,
+    size: 8,
   });
   drawText(firstPage, getPercentagesList("writerName"), {
     x: 182,
     y: 515,
-    size: 10,
+    size: 8,
   });
   drawText(firstPage, getPercentagesList("publisherName"), {
     x: 178,
@@ -106,7 +106,7 @@ async function createSheet(req, res) {
   drawText(firstPage, getPercentagesList("writerName"), {
     x: 75,
     y: 457,
-    size: 10,
+    size: 8,
   });
 
   const writeOwnershipPercentage = (
@@ -195,34 +195,15 @@ async function createSheet(req, res) {
       writeOwnershipPercentage(artist, percentage, rowNum, true)
     );
 
-  var agreementText = "";
-  for (let index in contributors) {
-    const contributorName = contributors[index].writerName;
-    const contributorNameSections = contributorName.split(" ");
-    for (let contributorNameSection of contributorNameSections) {
-      const currentLength = agreementText.split("\n").at(-1).length;
-      if (currentLength + contributorNameSection.length > 36) {
-        agreementText += "\n";
-      }
-      agreementText += " " + contributorNameSection;
-    }
-    if (index < contributors.length - 1) {
-      agreementText += ", ";
-    }
-  }
-  const numRows = agreementText.split("\n").length;
-
-  drawText(secondPage, agreementText, {
+  drawText(secondPage, "Gabriel Joaquin Gutierrez", {
     x: 338,
-    y: 355 + 8 * numRows,
-    size: 6,
-    lineHeight: 8,
+    y: 361,
+    size: 8,
   });
-  drawText(secondPage, agreementText, {
+  drawText(secondPage, "Gabriel Joaquin Gutierrez", {
     x: 120,
-    y: 308 + 8 * numRows,
-    size: 6,
-    lineHeight: 8,
+    y: 316,
+    size: 8,
   });
 
   contributors.forEach((contributor, contributorNum) =>
