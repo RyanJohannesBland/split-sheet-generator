@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import Fuse from "fuse.js";
 import { Formik } from "formik";
 import {
   Box,
@@ -10,13 +11,18 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  InputAdornment,
   Typography,
+  TextField,
 } from "@mui/material";
 import FormikTextField from "@/components/formik/FormikTextField";
 import FormikAutocomplete from "@/components/formik/FormikAutocomplete";
 import sheetSchema from "@/schema/sheet";
+import SearchIcon from "@mui/icons-material/Search";
 
 export default function Sheets() {
+  const [search, setSearch] = useState("");
+
   // Load artists on mount.
   const [artists, setArtists] = useState([]);
   useEffect(() => fetchArtists(), []);
@@ -79,6 +85,16 @@ export default function Sheets() {
         window.URL.revokeObjectURL(url);
       })
       .then(callback);
+  }
+
+  function filteredSheets() {
+    if (!search) return sheets;
+    const fuse = new Fuse(sheets, {
+      threshold: 0.5,
+      keys: ["name"],
+    });
+    const items = fuse.search(search);
+    return items.map((item) => item.item);
   }
 
   return (
@@ -196,6 +212,7 @@ export default function Sheets() {
       </Formik>
 
       <Dialog
+        fullScreen
         open={openPreviousSheetsDialog}
         onClose={() => setOpenPreviousSheetsDialog(false)}
       >
@@ -208,7 +225,21 @@ export default function Sheets() {
               gap: 2,
             }}
           >
-            {sheets.map((sheet) => (
+            <TextField
+              label="Search..."
+              variant="outlined"
+              sx={{ bgcolor: "white.main" }}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+              }}
+            />
+            {filteredSheets().map((sheet) => (
               <Card sx={{ marginTop: 1, width: "100%" }} key={sheet.key}>
                 <CardContent>
                   <Box
