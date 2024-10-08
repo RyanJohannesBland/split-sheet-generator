@@ -1,8 +1,7 @@
-import { PDFDocument } from "pdf-lib";
+import { PDF } from "@/pdfGeneration/pdf";
 import {
   S3Client,
   ListObjectsV2Command,
-  PutObjectCommand,
   GetObjectCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
@@ -15,70 +14,27 @@ const s3Client = new S3Client({
   },
 });
 
-function drawText(page, text, params) {
-  if (typeof text === "number") {
-    text = text.toString();
-  } else if (text === null) {
-    text = "N/A";
-  }
-
-  page.drawText(text, params);
-}
-
 async function createSheet(req, res) {
   const { songTitle, title, key, bpm, producers, writers, ...percentages } =
     JSON.parse(req.body);
 
-  const getCommand = new GetObjectCommand({
-    Bucket: process.env.BUCKET_NAME,
-    Key: "template/base_sheet.pdf",
-  });
-  const { Body } = await s3Client.send(getCommand);
-  const pdfData = await Body.transformToByteArray();
-  const pdfDoc = await PDFDocument.load(pdfData);
+  const pdf = new PDF();
+  await pdf.downloadTemplate();
 
-  const [firstPage, secondPage, thirdPage] = pdfDoc.getPages();
+  pdf.drawText("title", title);
+  pdf.drawText("key", key);
+  pdf.drawText("bpm", bpm);
 
-  // Title line.
-  drawText(firstPage, title, {
-    x: 130,
-    y: 660,
-    size: 12,
-  });
-  drawText(firstPage, key, {
-    x: 395,
-    y: 660,
-    size: 12,
-  });
-  drawText(firstPage, bpm, {
-    x: 485,
-    y: 660,
-    size: 12,
-  });
-
-  // Producers and writers.
-  const producersText = producers
-    .map((producer) => producer.artistName)
-    .join(" & ");
-  drawText(firstPage, producersText, {
-    x: 132,
-    y: 640,
-    size: 12,
-  });
-
-  const writersText = writers.map((writer) => writer.artistName).join(" & ");
-  drawText(firstPage, writersText, {
-    x: 115,
-    y: 620,
-    size: 12,
-  });
+  const producerNames = producers.map((producer) => producer.artistName);
+  const writerNames = writers.map((writer) => writer.artistName);
+  pdf.drawText("producers", producerNames.join(" & "));
+  pdf.drawText("writers", writerNames.join(" & "));
 
   const contributorMap = [...producers, ...writers].reduce(
     (acc, val) => ({ ...acc, [val.id]: val }),
     {}
   );
   const contributors = Object.values(contributorMap);
-
   const contributorPercentages = contributors.map((contributor, i) => [
     contributor,
     percentages[contributor.artistName],
@@ -88,142 +44,50 @@ async function createSheet(req, res) {
     contributorPercentages
       .map(([contributor, percentage]) => `${contributor[key]} ${percentage}%`)
       .join(", ");
-  drawText(firstPage, getPercentagesList("writerName"), {
-    x: 75,
-    y: 532,
-    size: 8,
-  });
-  drawText(firstPage, getPercentagesList("writerName"), {
-    x: 182,
-    y: 515,
-    size: 8,
-  });
-  drawText(firstPage, getPercentagesList("publisherName"), {
-    x: 178,
-    y: 495,
-    size: 8,
-  });
-  drawText(firstPage, getPercentagesList("writerName"), {
-    x: 75,
-    y: 457,
-    size: 8,
-  });
 
-  const writeOwnershipPercentage = (
-    artist,
-    percentage,
-    rowNum,
-    useSecondPage = false
-  ) => {
-    drawText(useSecondPage ? secondPage : firstPage, artist.writerName, {
-      x: 110,
-      y: 360 - rowNum * 155 + useSecondPage * 330,
-      size: 10,
-    });
-    drawText(useSecondPage ? secondPage : firstPage, artist.writerPRO, {
-      x: 130,
-      y: 340 - rowNum * 155 + useSecondPage * 330,
-      size: 10,
-    });
-    drawText(
-      useSecondPage ? secondPage : firstPage,
-      artist.writerIPI.toString(),
-      {
-        x: 100,
-        y: 320 - rowNum * 155 + useSecondPage * 330,
-        size: 10,
-      }
+  pdf.drawText("writerNamePercentages1", getPercentagesList("writerName"));
+  pdf.drawText("writerNamePercentages2", getPercentagesList("writerName"));
+  pdf.drawText("publisherNamePercentages", getPercentagesList("publisherName"));
+  pdf.drawText("writerNamePercentages3", getPercentagesList("writerName"));
+
+  const writeOwnershipPercentage = (artist, percentage, rowNum) => {
+    pdf.drawText(`ownershipWriterName${rowNum + 1}`, artist.writerName);
+    pdf.drawText(`ownershipWriterPRO${rowNum + 1}`, artist.writerPRO);
+    pdf.drawText(
+      `ownershipWriterIPI${rowNum + 1}`,
+      artist.writerIPI.toString()
     );
-    drawText(useSecondPage ? secondPage : firstPage, percentage.toString(), {
-      x: 170,
-      y: 300 - rowNum * 155 + useSecondPage * 330,
-      size: 10,
-    });
-
-    drawText(useSecondPage ? secondPage : firstPage, artist.publisherName, {
-      x: 370,
-      y: 360 - rowNum * 155 + useSecondPage * 330,
-      size: 10,
-    });
-    drawText(useSecondPage ? secondPage : firstPage, artist.publisherPRO, {
-      x: 390,
-      y: 340 - rowNum * 155 + useSecondPage * 330,
-      size: 10,
-    });
-    drawText(
-      useSecondPage ? secondPage : firstPage,
-      artist.publisherIPI.toString(),
-      {
-        x: 360,
-        y: 320 - rowNum * 155 + useSecondPage * 330,
-        size: 10,
-      }
+    pdf.drawText(
+      `ownershipWriterPercentage${rowNum + 1}`,
+      percentage.toString()
     );
-    drawText(useSecondPage ? secondPage : firstPage, percentage.toString(), {
-      x: 440,
-      y: 300 - rowNum * 155 + useSecondPage * 330,
-      size: 10,
-    });
-
-    drawText(useSecondPage ? secondPage : firstPage, percentage.toString(), {
-      x: 340,
-      y: 282 - rowNum * 155 + useSecondPage * 330,
-      size: 10,
-    });
-
-    drawText(useSecondPage ? secondPage : firstPage, artist.id, {
-      x: 132,
-      y: 263 - rowNum * 155 + useSecondPage * 330,
-      size: 10,
-    });
-    drawText(useSecondPage ? secondPage : firstPage, artist.phone, {
-      x: 343,
-      y: 263 - rowNum * 155 + useSecondPage * 330,
-      size: 10,
-    });
+    pdf.drawText(`ownershipPublisherName${rowNum + 1}`, artist.publisherName);
+    pdf.drawText(`ownershipPublisherPRO${rowNum + 1}`, artist.publisherPRO);
+    pdf.drawText(`ownershipPublisherIPI${rowNum + 1}`, artist.publisherIPI);
+    pdf.drawText(
+      `ownershipPublisherPercentage${rowNum + 1}`,
+      percentage.toString()
+    );
+    pdf.drawText(
+      `ownershipMasterPercentage${rowNum + 1}`,
+      percentage.toString()
+    );
+    pdf.drawText(`ownershipArtistEmail${rowNum + 1}`, artist.id);
+    pdf.drawText(`ownershipArtistPhone${rowNum + 1}`, artist.phone);
   };
 
-  contributorPercentages
-    .slice(0, 2)
-    .forEach(([artist, percentage], rowNum) =>
-      writeOwnershipPercentage(artist, percentage, rowNum)
-    );
-
-  contributorPercentages
-    .slice(2)
-    .forEach(([artist, percentage], rowNum) =>
-      writeOwnershipPercentage(artist, percentage, rowNum, true)
-    );
-
-  drawText(secondPage, "Gabriel Joaquin Gutierrez", {
-    x: 338,
-    y: 361,
-    size: 8,
-  });
-  drawText(secondPage, "Gabriel Joaquin Gutierrez", {
-    x: 120,
-    y: 316,
-    size: 8,
-  });
-
-  contributors.forEach((contributor, contributorNum) =>
-    drawText(thirdPage, contributor.writerName, {
-      x: 80,
-      y: 678 - 58 * contributorNum,
-      size: 14,
-    })
+  contributorPercentages.forEach(([artist, percentage], rowNum) =>
+    writeOwnershipPercentage(artist, percentage, rowNum)
   );
 
-  const pdfBytes = await pdfDoc.save();
-  const arrayBuffer = Buffer.from(pdfBytes);
+  pdf.drawText("agree-er1", "Gabriel Joaquin Gutierrez");
+  pdf.drawText("agree-er2", "Gabriel Joaquin Gutierrez");
 
-  const command = new PutObjectCommand({
-    Bucket: process.env.BUCKET_NAME,
-    Key: `sheets/${songTitle}.pdf`,
-    Body: pdfBytes,
-  });
-  await s3Client.send(command);
+  contributors.forEach((contributor, i) =>
+    pdf.drawText(`contributorSignature${i + 1}`, contributor.writerName)
+  );
 
+  const arrayBuffer = await pdf.save(songTitle);
   res.status(200).send(arrayBuffer);
 }
 
