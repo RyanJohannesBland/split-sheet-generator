@@ -20,7 +20,7 @@ export default yup.object().shape({
     .matches(phoneRegExp, "Phone number is not valid")
     .default(null)
     .nullable(),
-  oneStop: yup.boolean().default(null).nullable(),
+  oneStop: yup.boolean().default(false),
   publisherIPI: yup.number().default(null).nullable(),
   publisherName: yup.string().default(null).nullable(),
   publisherPRO: yup.string().default(null).nullable(),
