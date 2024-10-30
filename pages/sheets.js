@@ -185,8 +185,8 @@ export default function Sheets() {
                   formikProps?.values?.writers?.length) &&
                   [
                     ...new Set([
-                      ...formikProps?.values?.writers,
-                      ...formikProps?.values?.producers,
+                      ...(formikProps?.values?.writers || []),
+                      ...(formikProps?.values?.producers || []),
                     ]),
                   ].map((contributor) => (
                     <FormikTextField

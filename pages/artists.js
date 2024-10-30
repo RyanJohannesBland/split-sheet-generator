@@ -17,7 +17,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import ArtistDialog from "@/components/ArtistDialog";
 import ConfirmationDialog from "@/components/ConfirmationDialog";
 
-export default function Test() {
+export default function Artists() {
   const [search, setSearch] = useState("");
   const [artists, setArtists] = useState([]);
 
